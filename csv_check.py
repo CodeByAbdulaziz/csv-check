@@ -8,9 +8,9 @@ from pathlib import Path
 import sys
 
 
-def check_csv(path: Path) -> dict:
+def check_csv(path: Path, delimiter: str = ",") -> dict:
     with path.open(encoding="utf-8-sig", newline="") as file:
-        reader = csv.reader(file, strict=True)
+        reader = csv.reader(file, delimiter=delimiter, strict=True)
         headers = next(reader, None)
         if headers is None:
             raise ValueError("The file is empty.")
@@ -96,14 +96,21 @@ def print_report(report: dict) -> None:
     print(f"\nResult: {result}")
 
 
+def parse_delimiter(value: str) -> str:
+    if len(value) != 1 or value in "\r\n\0":
+        raise argparse.ArgumentTypeError("Use one character, such as ',' or ';', not a newline or NUL.")
+    return value
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Check a CSV file for common data problems.")
-    parser.add_argument("file", type=Path, help="Path to a comma-separated UTF-8 CSV file")
+    parser.add_argument("file", type=Path, help="Path to a UTF-8 CSV file")
+    parser.add_argument("--delimiter", type=parse_delimiter, default=",", help="Field separator (default: comma)")
     parser.add_argument("--json", action="store_true", help="Print the report as JSON")
     args = parser.parse_args(argv)
 
     try:
-        report = check_csv(args.file)
+        report = check_csv(args.file, delimiter=args.delimiter)
     except (OSError, UnicodeError, csv.Error, ValueError) as error:
         print(f"Error: {error}", file=sys.stderr)
         return 2

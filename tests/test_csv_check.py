@@ -81,6 +81,36 @@ class CsvCheckTests(unittest.TestCase):
         self.write_csv("city\nRiyadh\n Riyadh\nRiyadh\n")
         self.assertEqual(check_csv(self.path)["duplicate_rows"], [4])
 
+    def test_semicolon_separator_keeps_quoted_separators_and_commas(self):
+        self.write_csv('city;note;sales_sar\nRiyadh;"one; two, three";1200\nJeddah;;900\nJeddah;;900\n')
+        report = check_csv(self.path, delimiter=";")
+        self.assertEqual(report["columns"], 3)
+        self.assertEqual(report["missing_cells"], 2)
+        self.assertEqual(report["duplicate_rows"], [4])
+        self.assertEqual(report["row_width_issues"], [])
+        code, output, errors = self.run_cli("--delimiter", ";", "--json")
+        self.assertEqual(code, 1)
+        self.assertEqual(json.loads(output), report)
+        self.assertEqual(errors, "")
+
+    def test_tab_separator_and_short_rows(self):
+        self.write_csv("city\tsales_sar\nRiyadh\nJeddah\t900\n")
+        report = check_csv(self.path, delimiter="\t")
+        self.assertEqual(report["columns"], 2)
+        self.assertEqual(report["missing_cells"], 1)
+        self.assertEqual(report["row_width_issues"], [{"row": 2, "expected": 2, "actual": 1}])
+
+    def test_invalid_delimiters_show_a_cli_error(self):
+        self.write_csv("city,sales_sar\nRiyadh,1200\n")
+        for delimiter in ("", "::", "\n", "\r", "\0"):
+            with self.subTest(delimiter=repr(delimiter)):
+                errors = io.StringIO()
+                with contextlib.redirect_stderr(errors), self.assertRaises(SystemExit) as raised:
+                    main([str(self.path), "--delimiter", delimiter])
+                self.assertEqual(raised.exception.code, 2)
+                self.assertIn("Use one character", errors.getvalue())
+                self.assertNotIn("Traceback", errors.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()

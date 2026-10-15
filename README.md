@@ -48,7 +48,19 @@ Try a file without these problems:
 python csv_check.py examples/clean_sales.csv
 ```
 
-Both CSV files contain made-up sales data for Saudi cities. Amounts are in Saudi riyals (SAR).
+The sample files contain made-up sales data for Saudi cities. Amounts are in Saudi riyals (SAR).
+
+## Other separators
+
+The default separator is a comma. Use `--delimiter` for files that use another character, such as a semicolon:
+
+```bash
+python csv_check.py examples/semicolon_sales.csv --delimiter ";"
+```
+
+This sample has three rows and no issues. Quoted separators stay inside the cell, so `"Store A; morning shift"` is one value.
+
+You can also combine this option with `--json`. The separator must be one character; newlines and NUL are not allowed. Pass an actual tab character for tab-separated files.
 
 ## JSON report
 
@@ -82,4 +94,4 @@ Tests also run on GitHub when code is pushed or a pull request is opened.
 
 ## Limits
 
-This tool reads comma-separated UTF-8 files, including files with a UTF-8 BOM. It reports problems and leaves the file unchanged. It does not check data types, dates, business rules, or whether numbers are correct. Duplicate detection keeps row values in memory, so it is best for small and medium files.
+This tool reads UTF-8 files, including files with a UTF-8 BOM, using a comma or the separator set with `--delimiter`. It reports problems and leaves the file unchanged. It does not check data types, dates, business rules, or whether numbers are correct. Duplicate detection keeps row values in memory, so it is best for small and medium files.
